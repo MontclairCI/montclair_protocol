@@ -245,6 +245,43 @@ pub enum EvaluatorMessage {
     },
 }
 
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display
+)]
+pub enum TriggerStatus {
+    Created,
+    Reserved,
+    Started,
+    Completed,
+    Failed,
+    Canceled,
+    Interrupted,
+    TimedOut,
+    Disconnected,
+}
+
+impl TriggerStatus {
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            TriggerStatus::Completed
+                | TriggerStatus::Failed
+                | TriggerStatus::Canceled
+                | TriggerStatus::Interrupted
+                | TriggerStatus::TimedOut
+                | TriggerStatus::Disconnected
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum EvaluatorKillerMessage {
     PollRequest {
@@ -252,7 +289,7 @@ pub enum EvaluatorKillerMessage {
         trigger_id: TriggerId,
     },
     PollResponse {
-        result: Result<KillReason, String>,
+        result: Result<TriggerStatus, String>,
     },
 }
 
@@ -405,18 +442,40 @@ pub enum WorkerMessage {
 }
 
 #[derive(
-    Clone,
     Debug,
-    strum::EnumString,
-    strum::Display,
-    strum::AsRefStr,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
     Serialize,
-    Deserialize
+    Deserialize,
+    strum::Display,
+    strum::EnumString
 )]
-pub enum KillReason {
-    Interrupt,
-    Cancel,
-    Timeout,
+pub enum TaskStatus {
+    Created,
+    Reserved,
+    Started,
+    Completed,
+    Failed,
+    Interrupted,
+    Disconnected,
+    TimedOut,
+    Canceled,
+}
+
+impl TaskStatus {
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            TaskStatus::Completed
+                | TaskStatus::Failed
+                | TaskStatus::Canceled
+                | TaskStatus::Interrupted
+                | TaskStatus::TimedOut
+                | TaskStatus::Disconnected
+        )
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -426,7 +485,7 @@ pub enum WorkerKillerMessage {
         task_id: TaskId,
     },
     PollResponse {
-        result: Result<KillReason, String>,
+        result: Result<TaskStatus, String>,
     },
 }
 
@@ -464,14 +523,48 @@ pub enum DebuggerMessage {
     },
 }
 
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    strum::EnumString,
+    strum::Display
+)]
+pub enum DebugSessionStatus {
+    Created,
+    Reserved,
+    DebuggerConnected,
+    DebugClientConnected,
+    Completed,
+    DebugClientConnectionTimedOut,
+    Interrupted,
+    Disconnected,
+}
+
+impl DebugSessionStatus {
+    pub fn is_terminal(&self) -> bool {
+        matches!(
+            self,
+            DebugSessionStatus::Completed
+                | DebugSessionStatus::DebugClientConnectionTimedOut
+                | DebugSessionStatus::Interrupted
+                | DebugSessionStatus::Disconnected
+        )
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DebuggerKillerMessage {
     PollRequest {
         runner_id: RunnerId,
-        trigger_id: TriggerId,
+        debug_session_id: DebugSessionId,
     },
     PollResponse {
-        result: Result<KillReason, String>,
+        result: Result<DebugSessionStatus, String>,
     },
 }
 

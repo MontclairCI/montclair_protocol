@@ -65,6 +65,9 @@ pub enum ChannelType {
     /// A debugger channel. Initiated by a runner.
     Debugger,
 
+    /// A debugger killer channel. Initiated by a runner.
+    DebuggerKiller,
+
     /// A debug resolver channel. Initiated by a CLI.
     DebugResolver,
 
