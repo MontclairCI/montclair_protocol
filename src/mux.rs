@@ -64,11 +64,11 @@ pub struct MuxHandle {
 }
 
 impl MuxHandle {
+    #[tracing::instrument(skip_all)]
     pub async fn open_channel(
         &self,
         channel_type: ChannelType,
     ) -> Result<(ChannelSender, ChannelReceiver, CancellationToken), MuxError> {
-        tracing::info!("Requesting to open channel of type [{:?}]", channel_type);
         let channel_id = uuid::Uuid::now_v7();
         let (reply_tx, reply_rx) = oneshot::channel();
         self.command_tx
@@ -98,6 +98,7 @@ impl MuxHandle {
         Ok((channel_tx, channel_rx, channel_closed))
     }
 
+    #[tracing::instrument(skip_all)]
     pub async fn close_channel(
         &self,
         channel_id: ChannelId,
@@ -232,11 +233,9 @@ where
                         frame_result_opt = framed_reader.next() => {
                             match frame_result_opt {
                                 None => {
-                                    tracing::info!("Peer connection has dropped.");
                                     break;
                                 }
                                 Some(Err(e)) => {
-                                    tracing::info!("Failed to read frame from peer connection: {}", e);
                                     break;
                                 }
                                 Some(Ok(frame)) => {
@@ -248,13 +247,10 @@ where
                             }
                         }
                         _ = incoming_frame_tx.closed() => {
-                            tracing::info!("Mux actor frame receiver has dropped.");
                             break;
                         }
                     }
                 }
-
-                tracing::info!("Mux incoming frame reader task exiting.");
             });
 
             incoming_frame_rx
@@ -267,24 +263,14 @@ where
             tokio::spawn(async move {
                 let mut framed_writer = FramedWrite::new(writer, Codec::new());
 
-                loop {
-                    match outgoing_frame_rx.recv().await {
-                        Some(frame) => {
-                            if let Err(e) = framed_writer.send(frame).await {
-                                tracing::info!(
-                                    "Dropping outgoing frame because IO stream has closed: {}",
-                                    e
-                                );
-                            }
-                        }
-                        None => {
-                            tracing::info!("Mux actor frame sender has dropped.");
-                            break;
-                        }
+                while let Some(frame) = outgoing_frame_rx.recv().await {
+                    if let Err(e) = framed_writer.send(frame).await {
+                        tracing::warn!(
+                            "Dropping outgoing frame because IO stream has closed: {}",
+                            e
+                        );
                     }
                 }
-
-                tracing::info!("Mux outgoing frame writer task exiting.");
             });
 
             outgoing_frame_tx
@@ -321,6 +307,7 @@ where
         (join_handle, mux_handle)
     }
 
+    #[tracing::instrument(skip_all)]
     async fn run(&mut self) {
         loop {
             if self.status == MuxStatus::ShuttingDown && self.open_channels.is_empty() {
@@ -337,7 +324,6 @@ where
                             self.recv_incoming_frame(frame).await;
                         }
                         None => {
-                            tracing::info!("Incoming frame task has dropped.");
                             break;
                         }
                     }
@@ -348,7 +334,6 @@ where
                             self.send_outgoing_frame(frame).await;
                         }
                         None => {
-                            tracing::info!("Channel outgoing frame task has dropped.");
                             break;
                         }
                     }
@@ -359,17 +344,15 @@ where
                             self.handle_command(command).await;
                         }
                         None => {
-                            tracing::info!("All mux handles dropped.");
                             break;
                         }
                     }
                 }
             }
         }
-
-        tracing::info!("Mux actor task is terminating.");
     }
 
+    #[tracing::instrument(skip_all)]
     async fn send_outgoing_frame(&mut self, frame: Frame) {
         if frame.channel_id.is_nil() {
             if let Err(e) = self.outgoing_frame_tx.send(frame).await {
@@ -407,13 +390,8 @@ where
 
     /// Drain all pending channels and close all channels.
     fn shutdown(&mut self) {
-        tracing::info!("Shutting down mux...");
         self.status = MuxStatus::ShuttingDown;
 
-        tracing::info!(
-            "Canceling {} pending channels...",
-            self.pending_channels.len()
-        );
         for (_, pending_channel) in self.pending_channels.drain() {
             let _ = pending_channel.reply_tx.send(Err(MuxError(
                 "Cannot open new channel. Mux is shutting down".to_string(),
@@ -443,11 +421,10 @@ where
                 }
             }
         });
-
-        tracing::info!("Awaiting shutdown completion by peer mux...");
     }
 
     /// Handle an incoming frame from the peer.
+    #[tracing::instrument(skip_all)]
     async fn recv_incoming_frame(&mut self, frame: Frame) {
         if frame.channel_id.is_nil() {
             // Message for control channel.
@@ -463,15 +440,9 @@ where
                     self.handle_open_channel_response(channel_id, result).await;
                 }
                 Message::Control(ControlMessage::CloseChannelRequest { channel_id }) => {
-                    tracing::info!("Received close channel request for ID [{}]", channel_id);
                     self.handle_close_channel_request(channel_id).await;
                 }
                 Message::Control(ControlMessage::CloseChannelResponse { channel_id, result }) => {
-                    tracing::info!(
-                        "Received close channel response for ID [{}]: {:?}",
-                        channel_id,
-                        result
-                    );
                     self.handle_close_channel_response(channel_id, result).await;
                 }
                 _ => {
@@ -487,6 +458,7 @@ where
     }
 
     /// Handling a request from the peer about opening a channel.
+    #[tracing::instrument(skip_all)]
     async fn handle_open_channel_request(
         &mut self,
         channel_id: ChannelId,
@@ -596,6 +568,7 @@ where
     }
 
     /// Handle a response from the peer about opening a channel.
+    #[tracing::instrument(skip_all)]
     async fn handle_open_channel_response(
         &mut self,
         channel_id: ChannelId,
@@ -641,6 +614,7 @@ where
     }
 
     /// Handle a request from the peer about closing a channel.
+    #[tracing::instrument(skip_all)]
     async fn handle_close_channel_request(&mut self, channel_id: ChannelId) {
         match self.open_channels.remove(&channel_id) {
             Some(open_channel) => {
@@ -683,6 +657,7 @@ where
     }
 
     /// Handle a response from the peer about closing a channel.
+    #[tracing::instrument(skip_all)]
     async fn handle_close_channel_response(
         &mut self,
         channel_id: ChannelId,
@@ -719,6 +694,7 @@ where
     }
 
     /// Dispatch an incoming message to a local channel.
+    #[tracing::instrument(skip_all)]
     async fn dispatch_message(&mut self, channel_id: ChannelId, message: Message) {
         match self.open_channels.get(&channel_id) {
             Some(open_channel) => match open_channel.status {
@@ -745,6 +721,7 @@ where
     }
 
     /// Handle a command from a local task.
+    #[tracing::instrument(skip_all)]
     async fn handle_command(&mut self, command: Command) {
         match command {
             Command::OpenChannel {
@@ -766,6 +743,7 @@ where
     }
 
     /// Handle a command from a local task to open a new channel.
+    #[tracing::instrument(skip_all)]
     async fn handle_open_channel_command(
         &mut self,
         channel_id: ChannelId,
@@ -816,6 +794,7 @@ where
     }
 
     /// Handle a command from a local task to close a channel.
+    #[tracing::instrument(skip_all)]
     async fn handle_close_channel_command(
         &mut self,
         channel_id: ChannelId,

@@ -125,6 +125,7 @@ pub struct ChannelSender {
 
 impl ChannelSender {
     /// Sends a [`Message`] to the peer.
+    #[tracing::instrument(skip_all)]
     pub async fn send(&self, message: Message) -> Result<(), MuxError> {
         let frame = Frame {
             channel_id: self.channel_id,
@@ -245,6 +246,7 @@ pub struct ChannelReceiver {
 impl ChannelReceiver {
     /// Receives a [`Message`] from the channel.
     /// Returns [`None`] if the channel has been closed.
+    #[tracing::instrument(skip_all)]
     pub async fn recv(&mut self) -> Option<Message> {
         self.message_stream.next().await
     }

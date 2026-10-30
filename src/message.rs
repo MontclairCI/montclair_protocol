@@ -80,6 +80,59 @@ pub enum ControlMessage {
 )]
 #[serde(transparent)]
 #[sqlx(transparent)]
+pub struct AccountId(Uuid);
+
+impl AccountId {
+    pub fn new() -> Self {
+        Self(Uuid::now_v7())
+    }
+}
+
+impl std::fmt::Display for AccountId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<Uuid> for AccountId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+}
+
+impl From<AccountId> for Uuid {
+    fn from(account_id: AccountId) -> Self {
+        account_id.0
+    }
+}
+
+impl TryFrom<&str> for AccountId {
+    type Error = uuid::Error;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Ok(Self(Uuid::try_parse(s)?))
+    }
+}
+
+impl std::ops::Deref for AccountId {
+    type Target = Uuid;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    sqlx::Type
+)]
+#[serde(transparent)]
+#[sqlx(transparent)]
 pub struct RunnerId(Uuid);
 
 impl RunnerId {
