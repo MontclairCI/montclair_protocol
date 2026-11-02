@@ -80,6 +80,59 @@ pub enum ControlMessage {
 )]
 #[serde(transparent)]
 #[sqlx(transparent)]
+pub struct UserId(Uuid);
+
+impl UserId {
+    pub fn new() -> Self {
+        Self(Uuid::now_v7())
+    }
+}
+
+impl std::fmt::Display for UserId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<Uuid> for UserId {
+    fn from(uuid: Uuid) -> Self {
+        Self(uuid)
+    }
+}
+
+impl From<UserId> for Uuid {
+    fn from(id: UserId) -> Self {
+        id.0
+    }
+}
+
+impl TryFrom<&str> for UserId {
+    type Error = uuid::Error;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Ok(Self(Uuid::try_parse(s)?))
+    }
+}
+
+impl std::ops::Deref for UserId {
+    type Target = Uuid;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    sqlx::Type
+)]
+#[serde(transparent)]
+#[sqlx(transparent)]
 pub struct AccountId(Uuid);
 
 impl AccountId {
@@ -567,11 +620,11 @@ pub enum DebuggerSchedulerMessage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DebuggerMessage {
-    ConnectDebuggerRequest {
+    StartDebugSessionRequest {
         runner_id: RunnerId,
         debug_session_id: DebugSessionId,
     },
-    ConnectDebuggerResponse {
+    StartDebugSessionResponse {
         result: Result<(), String>,
     },
 }
@@ -590,9 +643,9 @@ pub enum DebuggerMessage {
 pub enum DebugSessionStatus {
     Created,
     Reserved,
-    DebuggerConnected,
+    Started,
     DebugClientConnected,
-    Completed,
+    Stopped,
     DebugClientConnectionTimedOut,
     Interrupted,
     Disconnected,
@@ -602,7 +655,7 @@ impl DebugSessionStatus {
     pub fn is_terminal(&self) -> bool {
         matches!(
             self,
-            DebugSessionStatus::Completed
+            DebugSessionStatus::Stopped
                 | DebugSessionStatus::DebugClientConnectionTimedOut
                 | DebugSessionStatus::Interrupted
                 | DebugSessionStatus::Disconnected
@@ -653,10 +706,8 @@ pub enum DebugClientMessage {
     CompleteDiffUploadResponse { result: Result<(), String> },
     ApplyDiffRequest,
     ApplyDiffResponse { result: Result<(), String> },
-    StartShellRequest { step: StepConfig },
+    StartShellRequest,
     StartShellResponse { result: Result<(), String> },
-    ExecuteStepRequest { step: StepConfig },
-    ExecuteStepResponse { result: Result<(), String> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

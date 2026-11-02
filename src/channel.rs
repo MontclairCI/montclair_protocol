@@ -269,12 +269,6 @@ impl Stream for ChannelReceiver {
 
 impl Drop for ChannelReceiver {
     fn drop(&mut self) {
-        tracing::info!(
-            "Dropping ChannelReceiver [{:?}][{}]. Spawning task to send close command.",
-            self.channel_type,
-            self.channel_id
-        );
-
         let command_tx = self.command_tx.clone();
         let channel_id = self.channel_id;
 
