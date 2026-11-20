@@ -1,17 +1,17 @@
-use muzanci_config::config::ImageConfig;
-use muzanci_git::GitCommitSha;
-use muzanci_git::GitRemote;
+use montclair_git::GitCommitSha;
+use montclair_git::GitRemote;
+use montclair_plan::config::ImageConfig;
 use serde::Deserialize;
 use serde::Serialize;
 use url::Url;
 
-use muzanci_config::config::Config;
-use muzanci_config::config::DebugClientConfig;
-use muzanci_config::config::DebugSessionId;
-use muzanci_config::config::StepConfig;
-use muzanci_config::config::StepIndex;
-use muzanci_config::config::TriggerConfig;
-use muzanci_git::GitBranch;
+use montclair_git::GitBranch;
+use montclair_plan::config::Config;
+use montclair_plan::config::DebugClientConfig;
+use montclair_plan::config::DebugSessionId;
+use montclair_plan::config::StepConfig;
+use montclair_plan::config::StepIndex;
+use montclair_plan::config::TriggerConfig;
 use uuid::Uuid;
 
 use crate::channel::ChannelId;

@@ -1,5 +1,5 @@
 [package]
-name = "muzanci-transport"
+name = "montclair_protocol"
 version = "0.1.0"
 edition = "2024"
 
@@ -19,9 +19,9 @@ tokio-util = { version = "0.7.18", features = ["codec"] }
 tracing = "0.1.44"
 url = { version = "2.5.8", features = ["serde"] }
 uuid = { version = "1.23.3", features = ["serde", "v7"] }
-muzanci-config = { path = "../muzanci-config" }
-muzanci-image = { path = "../muzanci-image" }
-muzanci-git = { path = "../muzanci-git" }
+montclair_plan = { git = "https://github.com/MontclairCI/montclair_plan.git" }
+montclair_container = { git = "https://github.com/MontclairCI/montclair_container.git" }
+montclair_git = { git = "https://github.com/MontclairCI/montclair_git.git" }
 tokio-stream = "0.1.19"
 strum = { version = "0.28.0", features = ["derive"] }
 sqlx = { version = "0.9.0", features = ["derive"] }
@@ -30,7 +30,7 @@ sqlx = { version = "0.9.0", features = ["derive"] }
 tracing-test = "0.2.6"
 
 [lib]
-name = "muzanci_transport"
+name = "montclair_protocol"
 path = "src/lib.rs"
 
 [lints.clippy]

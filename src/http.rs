@@ -1,5 +1,5 @@
-use muzanci_config::config::DebugClientConfig;
-use muzanci_config::config::DebugSessionId;
+use montclair_plan::config::DebugClientConfig;
+use montclair_plan::config::DebugSessionId;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -7,11 +7,11 @@ use crate::message::AccountId;
 use crate::message::UserId;
 
 /// The HTTP Upgrade header value for the MuzanCI transport protocol.
-pub const MUZANCI_TRANSPORT_V1: &str = "muzanci-transport/v1";
+pub const montclair_protocol_V1: &str = "montclair-transport/v1";
 
 /// The HTTP header for the runner ID, sent by the server upon successful upgrade to the MuzanCI transport protocol.
 /// The value must be a valid [`RunnerId`].
-pub const MUZANCI_RUNNER_ID_HEADER: &str = "X-MuzanCI-Runner-ID";
+pub const montclair_RUNNER_ID_HEADER: &str = "X-MuzanCI-Runner-ID";
 
 /// The HTTP response body for the RegisterRunner endpoint.
 ///
